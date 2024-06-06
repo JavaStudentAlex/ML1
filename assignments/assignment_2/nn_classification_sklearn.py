@@ -10,6 +10,15 @@ import warnings
 # We will suppress ConvergenceWarnings in this task. In practice, you should take warnings more seriously.
 warnings.filterwarnings("ignore")
 
+SEARCH_PARAMS = {
+    'hidden_layer_sizes': [2, 10, 100, 200, 500],
+}
+
+ADVANCED_SEARCH_PARAMS = {
+    'hidden_layer_sizes': [100, 200],
+    'alpha': [0.0, 0.1, 1.0],
+    'solver': ['adam', 'lbfgs']
+}
 
 def reduce_dimension(X_train: np.ndarray, n_components: int) -> Tuple[np.ndarray, PCA]:
     """
@@ -17,12 +26,9 @@ def reduce_dimension(X_train: np.ndarray, n_components: int) -> Tuple[np.ndarray
     :param n_components: Number of principal components
     :return: Data with reduced dimensionality, which has shape (n_samples, n_components), and the PCA object
     """
-
-    # TODO: Create a PCA object and fit it using X_train
-    #       Transform X_train using the PCA object.
-    #       Print the explained variance ratio of the PCA object.
-    #       Return both the transformed data and the PCA object.
-    return None, None
+    pca = PCA(n_components=n_components, random_state=42)
+    X_train_pca = pca.fit_transform(X_train)
+    return X_train_pca, pca
 
 
 def train_nn(X_train: np.ndarray, y_train: np.ndarray) -> MLPClassifier:
@@ -36,11 +42,25 @@ def train_nn(X_train: np.ndarray, y_train: np.ndarray) -> MLPClassifier:
 
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
                                                       test_size=0.2, random_state=42)
+    
+    train_size = X_train.shape[0]
+    val_size = X_val.shape[0]
+    train_indices = np.arange(train_size)
+    test_indices = np.arange(train_size, train_size + val_size)
+    cv = [(train_indices, test_indices)]
 
-    # TODO: Train MLPClassifier with different number of neurons in one hidden layer.
-    #       Print the train accuracy, validation accuracy, and the training loss for each configuration.
-    #       Return the MLPClassifier that you consider to be the best.
-    return None
+    new_x_train = np.concatenate((X_train, X_val), axis=0)
+    new_y_train = np.concatenate((y_train, y_val), axis=0)
+
+    nn = MLPClassifier(
+        random_state=1,
+        max_iter=500,
+        solver='adam'
+    )
+    grid = GridSearchCV(nn, SEARCH_PARAMS, cv=cv, scoring='accuracy', verbose=3, return_train_score=True)
+    grid.fit(new_x_train, new_y_train)
+
+    return grid.best_estimator_
 
 
 def train_nn_with_regularization(X_train: np.ndarray, y_train: np.ndarray) -> MLPClassifier:
@@ -53,11 +73,27 @@ def train_nn_with_regularization(X_train: np.ndarray, y_train: np.ndarray) -> ML
     """
     X_train, X_val, y_train, y_val = train_test_split(X_train, y_train,
                                                       test_size=0.2, random_state=42)
+    
+    train_size = X_train.shape[0]
+    val_size = X_val.shape[0]
+    train_indices = np.arange(train_size)
+    test_indices = np.arange(train_size, train_size + val_size)
+    cv = [(train_indices, test_indices)]
 
-    # TODO: Use the code from the `train_nn` function, but add regularization to the MLPClassifier.
-    #       Again, return the MLPClassifier that you consider to be the best.
+    new_x_train = np.concatenate((X_train, X_val), axis=0)
+    new_y_train = np.concatenate((y_train, y_val), axis=0)
 
-    return None
+    nn = MLPClassifier(
+        random_state=1,
+        max_iter=500,
+        solver='adam',
+        early_stopping=True,
+        alpha=0.1
+    )
+    grid = GridSearchCV(nn, SEARCH_PARAMS, cv=cv, scoring='accuracy', verbose=3, return_train_score=True)
+    grid.fit(new_x_train, new_y_train)
+
+    return grid.best_estimator_
 
 
 def plot_training_loss_curve(nn: MLPClassifier) -> None:
@@ -66,7 +102,12 @@ def plot_training_loss_curve(nn: MLPClassifier) -> None:
 
     :param nn: The trained MLPClassifier
     """
-    # TODO: Plot the training loss curve of the MLPClassifier. Don't forget to label the axes.
+    plt.figure()
+    plt.plot(nn.loss_curve_)
+    plt.title('Training Loss Curve')
+    plt.xlabel('Iterations')
+    plt.ylabel('Loss')
+    plt.show()
 
 
 def show_confusion_matrix_and_classification_report(nn: MLPClassifier, X_test: np.ndarray, y_test: np.ndarray) -> None:
@@ -77,9 +118,13 @@ def show_confusion_matrix_and_classification_report(nn: MLPClassifier, X_test: n
     :param X_test: Test features (PCA-projected)
     :param y_test: Test targets
     """
-    # TODO: Use `nn` to compute predictions on `X_test`.
-    #       Use `confusion_matrix` and `ConfusionMatrixDisplay` to plot the confusion matrix on the test data.
-    #       Use `classification_report` to print the classification report.
+    y_pred = nn.predict(X_test)
+    cm = confusion_matrix(y_test, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=nn.classes_)
+    disp.plot()
+    plt.show()
+
+    print(classification_report(y_test, y_pred))
 
 
 def perform_grid_search(X_train: np.ndarray, y_train: np.ndarray) -> MLPClassifier:
@@ -90,10 +135,12 @@ def perform_grid_search(X_train: np.ndarray, y_train: np.ndarray) -> MLPClassifi
     :param y_train: Targets
     :return: The best estimator (MLPClassifier) found by GridSearchCV
     """
-    # TODO: Create parameter dictionary for GridSearchCV, as specified in the assignment sheet.
-    #       Create an MLPClassifier with the specified default values.
-    #       Run the grid search with `cv=5` and (optionally) `verbose=4`.
-    #       Print the best score (mean cross validation score) and the best parameter set.
-    #       Return the best estimator found by GridSearchCV.
 
-    return None
+    nn = MLPClassifier(
+        random_state=42,
+        max_iter=100,
+    )
+    grid = GridSearchCV(nn, ADVANCED_SEARCH_PARAMS, cv=5, scoring='accuracy', verbose=1)
+    grid.fit(X_train, y_train)
+
+    return grid.best_estimator_

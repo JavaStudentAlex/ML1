@@ -38,8 +38,13 @@ class Neuron(Module):
 
         :param x: List of Scalar values, representing the inputs to the neuron
         """
-        # TODO: Implement the forward pass through the neuron.
-        raise NotImplementedError('Task 2.1 not implemented')
+        z = sum(w * xi for w, xi in zip(self.w, x)) + self.b
+        
+        # Apply the activation function
+        if self.use_relu:
+            return z.relu()
+        else:
+            return z
 
     def parameters(self):
         return self.w + [self.b]
@@ -55,9 +60,7 @@ class FeedForwardLayer(Module):
         :param num_inputs: Number of inputs that each neuron in that layer will receive
         :param num_outputs: Number of neurons in that layer
         """
-        # TODO: Initialize the neurons in the layer. `self.neurons` should be a List of Neuron objects.
-        self.neurons = None
-        raise NotImplementedError('Task 2.2 not implemented')
+        self.neurons = [Neuron(num_inputs, use_relu) for _ in range(num_outputs)]
 
     def __call__(self, x: List[Scalar]) -> List[Scalar]:
         """
@@ -65,8 +68,7 @@ class FeedForwardLayer(Module):
 
         :param x: List of Scalar values, representing the input features
         """
-        raise NotImplementedError('Task 2.2 not implemented')
-        return None
+        return [neuron(x) for neuron in self.neurons]
 
     def parameters(self):
         return [p for n in self.neurons for p in n.parameters()]
@@ -84,9 +86,11 @@ class MultiLayerPerceptron(Module):
         :param num_hidden: List of integers, where each integer represents the number of neurons in that hidden layer
         :param num_outputs: Number of output neurons
         """
-        # TODO: `self.layers` should be a List of FeedForwardLayer objects.
-        self.layers = None
-        raise NotImplementedError('Task 2.3 not implemented')
+        self.layers = [
+            FeedForwardLayer(in_params, layer_neurons, use_relu=True)
+            for in_params, layer_neurons in zip([num_inputs] + num_hidden, num_hidden)
+        ]
+        self.layers.append(FeedForwardLayer(num_hidden[-1], num_outputs, use_relu=False))
 
     def __call__(self, x: List[Scalar]) -> List[Scalar]:
         """
@@ -96,8 +100,9 @@ class MultiLayerPerceptron(Module):
 
         :param x: List of Scalar values, representing the input features
         """
-        raise NotImplementedError('Task 2.3 not implemented')
-        return None
+        for layer in self.layers:
+            x = layer(x)
+        return x
 
     def parameters(self):
         return [p for layer in self.layers for p in layer.parameters()]

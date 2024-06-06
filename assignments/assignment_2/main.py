@@ -20,7 +20,7 @@ def task_1():
     # PCA
     # Task 1.1.1
     print("----- Task 1.1.1 -----")
-    n_components = None # TODO: Choose the number of components such that 95% of the variance is retained
+    n_components = 303
     X_train_pca, pca = reduce_dimension(X_train, n_components)
     print(X_train_pca.shape)
 
@@ -34,14 +34,15 @@ def task_1():
     print("----- Task 1.1.4 -----")
     best_reg_nn = train_nn_with_regularization(X_train_pca, y_train)
 
-    best_model_task_1_1 = None # TODO: Choose the best model from the previous Tasks
+    best_model_task_1_1 = best_reg_nn
     plot_training_loss_curve(best_model_task_1_1)
 
     # Task 1.2   
     print("----- Task 1.2 -----")
     best_gs_nn = perform_grid_search(X_train_pca, y_train)
 
-    final_model = None # TODO: Choose the best model from *all* previous Tasks
+    final_model = best_gs_nn
+    print(final_model)
 
     X_test_pca = pca.transform(X_test)
     show_confusion_matrix_and_classification_report(final_model, X_test_pca, y_test)
@@ -85,8 +86,8 @@ def task_3_bonus():
 
 
 def main():
-    task_1()
-    task_2()
+    # task_1()
+    # task_2()
     task_3_bonus()
 
 

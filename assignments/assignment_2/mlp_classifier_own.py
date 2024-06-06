@@ -22,8 +22,9 @@ class MLPClassifierOwn():
 
         :param z: List of Scalar values
         """
-        raise NotImplementedError('Task 2.4 not implemented.')
-        return None
+        exponents = [z_i.exp() for z_i in z]
+        sum_exponents = sum(exponents)
+        return [exp / sum_exponents for exp in exponents]
 
     @staticmethod
     def sigmoid(z: Scalar) -> Scalar:
@@ -32,8 +33,7 @@ class MLPClassifierOwn():
 
         :param z: Scalar
         """
-        raise NotImplementedError('[Bonus] Task 3.1 not implemented.')
-        return None
+        return Scalar(1) / (Scalar(1) + (-z).exp())
 
     @staticmethod
     def multiclass_cross_entropy_loss(y_true: int, probs: List[Scalar]) -> Scalar:
@@ -43,8 +43,7 @@ class MLPClassifierOwn():
         :param y_true: True class index (0-based)
         :param probs: List of Scalar values, representing the predicted probabilities for each class
         """
-        raise NotImplementedError('Task 2.4 not implemented.')
-        return None
+        return -probs[y_true].log()
 
     @staticmethod
     def binary_cross_entropy_loss(y_true: int, prob: Scalar) -> Scalar:
@@ -54,8 +53,8 @@ class MLPClassifierOwn():
         :param y_true: 0 or 1
         :param prob: Scalar between 0 and 1, representing the probability of the positive class
         """
-        raise NotImplementedError('[Bonus] Task 3.1 not implemented.')
-        return None
+        y_true_scalar = Scalar(y_true)
+        return -(y_true_scalar * prob.log() + (Scalar(1) - y_true_scalar) * (Scalar(1) - prob).log())
 
     def l2_regularization_term(self) -> Scalar:
         """
@@ -64,8 +63,9 @@ class MLPClassifierOwn():
         Compute the sum of squared model parameters and weigh this term by alpha/2 * (1 / batch_size).
         Ensure that you return a Scalar object since we need to backpropagate through this term.
         """
-        raise NotImplementedError('[Bonus] L2 Regularization not implemented.')
-        return None
+        scaling_factor = self.alpha / (2 * self.batch_size)
+        sum_of_squares = sum((p * p for p in self.model.parameters()))
+        return scaling_factor * sum_of_squares
 
     def sgd_step(self, learning_rate: float) -> None:
         """
@@ -86,8 +86,6 @@ class MLPClassifierOwn():
         assert self.num_classes > 1, 'Number of classes must be greater than 1'
         if self.num_classes == 2:
             nn_num_outputs = 1
-            raise NotImplementedError('Bonus Task (Binary classification) is not implemented. '
-                                      'Thus, number of classes must be greater than 2 (multi-class classification)')
         else:
             nn_num_outputs = self.num_classes
 
